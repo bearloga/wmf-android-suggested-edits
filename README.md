@@ -7,3 +7,5 @@ Then `crontab -e`:
 ```
 0 5 * * * bash /home/bearloga/android/suggested_edits/update_publish_notebook.sh
 ```
+
+to have the script be executed every day at 5AM UTC.
