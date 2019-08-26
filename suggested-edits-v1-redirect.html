@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Refresh" content="6; url=https://analytics.wikimedia.org/datasets/wikipedia-android-app-reports/suggested-edits-v2.html">
+    <title>Suggested Edits in Wikipedia Android app (v1)</title>
+    <style>
+      body {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 18px;
+        padding: 15px;
+        text-align: center;
+      }
+      #message {
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>Please update your bookmarks and links</p>
+    <p id="message">Redirecting to report of Suggested Edits v2 in <span id="timer">5</span> seconds…</p>
+    <script>
+    var secondsLeft = 5;
+    function updateTimer() {
+      document.getElementById("timer").innerHTML = secondsLeft--;
+      if (secondsLeft === 0) {
+        clearInterval(myCountdown);
+      }
+    }
+    myCountdown = setInterval(updateTimer, 1000);
+    </script>
+  </body>
+</html> 
