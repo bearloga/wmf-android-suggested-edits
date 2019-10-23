@@ -8,6 +8,9 @@ library(ratelimitr)
 
 # columns: rev_date, rev_ts, rev_id, page_id, user_name, edit_type, reverted, reverting_rev
 revert_status_data <- readr::read_csv("revert_status_data_image-captions.csv.gz", col_types = "DTiiccli")
+# for re-checking from scratch, if needed:
+# revert_status_data <- readr::read_csv("revert_status_data_image-captions_backup.csv.gz", col_types = "DTiiccli") %>%
+#     dplyr::filter(rev_date == '2019-06-05')
 
 # (potentially) fetch archived revs to remove them from revert status dataset
 try({
@@ -15,9 +18,9 @@ try({
   ar_page_id AS page_id, ar_rev_id AS rev_id
 FROM archive
 LEFT JOIN change_tag ON archive.ar_rev_id = change_tag.ct_rev_id
-LEFT JOIN comment ON archive.ar_comment_id = comment.comment_id
+LEFT JOIN `comment` ON archive.ar_comment_id = comment.comment_id
 WHERE INSTR(comment_text, '* wbsetlabel-') > 0 -- image captions
-  AND ct_tag_id = 22 -- android app edit", "wikidatawiki")
+  AND ct_tag_id = 22 -- android app edit", "commonswiki")
   revert_status_data <- dplyr::anti_join(revert_status_data, deleted_revisions, by = c("page_id", "rev_id"))
 })
 
@@ -70,12 +73,17 @@ image_captions <- image_captions %>%
   )
 
 # Create MW API session:
-api_session = mwapi$Session("https://commons.wikimedia.org", user_agent = "Revert detection <mpopov@wikimedia.org>")
+# api_session = mwapi$Session("https://commons.wikimedia.org", user_agent = "Revert detection <mpopov@wikimedia.org>")
+api_session = mwapi$Session("https://commons.wikimedia.org", user_agent = "Suggested edits revert detection <mpopov@wikimedia.org>")
 
 check_rev <- function(rev_id, page_id) {
   # docs: https://pythonhosted.org/mwreverts/api.html
-  response <- mwrev$api$check(api_session, rev_id = rev_id, page_id = page_id, radius = 5, window = 48 * 60 * 60)[[2]]
-  return(response)
+  try({
+      response <- mwrev$api$check(api_session, rev_id = rev_id, page_id = page_id, radius = 5, window = 48 * 60 * 60)[[2]]
+      return(response)
+  })
+  message(glue("Error processing revision {rev_id} for page {page_id} from {d}"))
+  return(NULL)
 }
 # max 10 calls per second, 500 calls per minute
 check_rev_limited <- limit_rate(check_rev, rate(n = 10, period = 1), rate(n = 300, period = 60))
@@ -91,9 +99,11 @@ for (d in dates) {
   page_ids <- image_captions_by_date[[d]]$page_id
   revert_status[[d]] <- purrr::map2(rev_ids, page_ids, check_rev_limited)
 }
+# Known errors:
+# - rev 363506759 for page 38721551 from 2019-08-27, filed bug report at https://github.com/mediawiki-utilities/python-mwreverts/issues/11
 
 # Wrangle into the format we want:
-rev_status <- purrr::map_dfr(revert_status, function(revisions) {
+rev_status_tidy <- purrr::map_dfr(revert_status, function(revisions) {
   return(purrr::map_dfr(revisions, function(revision) {
     if (!is.null(revision)) {
       return(data.frame(reverted = TRUE, reverting_rev = revision$reverting$revid))
@@ -104,7 +114,7 @@ rev_status <- purrr::map_dfr(revert_status, function(revisions) {
 }) %>% dplyr::mutate(rev_id = as.integer(rev_id))
 
 # Augment the existing data with newly fetched data:
-rs_df <- dplyr::left_join(image_captions, rev_status, by = "rev_id") %>%
+rs_df <- dplyr::left_join(image_captions, rev_status_tidy, by = "rev_id") %>%
   dplyr::bind_rows(dplyr::filter(revert_status_data, rev_date < start_date))
 # And then save it:
 rs_df %>%

@@ -86,7 +86,7 @@ for (d in dates) {
 }
 
 # Wrangle into the format we want:
-rev_status <- purrr::map_dfr(revert_status, function(revisions) {
+rev_status_tidy <- purrr::map_dfr(revert_status, function(revisions) {
   return(purrr::map_dfr(revisions, function(revision) {
     if (!is.null(revision)) {
       return(data.frame(reverted = TRUE, reverting_rev = revision$reverting$revid))
@@ -97,7 +97,7 @@ rev_status <- purrr::map_dfr(revert_status, function(revisions) {
 }) %>% dplyr::mutate(rev_id = as.integer(rev_id))
 
 # Augment the existing data with newly fetched data:
-rs_df <- dplyr::left_join(description_edits, rev_status, by = "rev_id") %>%
+rs_df <- dplyr::left_join(description_edits, rev_status_tidy, by = "rev_id") %>%
   dplyr::bind_rows(dplyr::filter(revert_status_data, rev_date < start_date))
 # And then save it:
 rs_df %>%
