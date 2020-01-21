@@ -30,7 +30,7 @@ Then the packages required for producing the report:
 
 ```R
 install.packages(c(
-  "RMySQL", "DBI", "tidyverse", "import", "knitr",
+  "RMySQL", "DBI", "tidyverse", "import", "knitr", "remotes",
   "reticulate", # for using MediaWiki Python utils
   "ratelimitr", # for throttling MW API calls
   "RcppRoll",   # for smoothing using rolling average
