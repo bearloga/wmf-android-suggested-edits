@@ -13,7 +13,7 @@ cd $SE_PATH
   Rscript revert_rate_image-captions.R
 
   echo "Refreshing report v2"
-  $PYTHON_HOME/jupyter nbconvert --ExecutePreprocessor.timeout=900 --execute --to html suggested-edits-v2.ipynb
+  $PYTHON_HOME/jupyter nbconvert --ExecutePreprocessor.timeout=1800 --execute --to html suggested-edits-v2.ipynb
   cp suggested-edits-v2.html /srv/published-datasets/wikipedia-android-app-reports
 
 } >> $SE_PATH/notebook_update.log 2>&1

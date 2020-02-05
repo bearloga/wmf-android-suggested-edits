@@ -67,8 +67,12 @@ api_session = mwapi$Session("https://www.wikidata.org", user_agent = "Revert det
 
 check_rev <- function(rev_id, page_id) {
   # docs: https://pythonhosted.org/mwreverts/api.html
-  response <- mwrev$api$check(api_session, rev_id = rev_id, page_id = page_id, radius = 5, window = 48 * 60 * 60)[[2]]
-  return(response)
+  try({
+    response <- mwrev$api$check(api_session, rev_id = rev_id, page_id = page_id, radius = 5, window = 48 * 60 * 60)[[2]]
+    return(response)
+  })
+  message(glue("Error processing revision {rev_id} for page {page_id} from {d}"))
+  return(NULL)
 }
 # max 10 calls per second, 500 calls per minute
 check_rev_limited <- limit_rate(check_rev, rate(n = 10, period = 1), rate(n = 300, period = 60))
